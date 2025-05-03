@@ -1,28 +1,34 @@
-// db.js
-require('dotenv').config();
-const MongoClient = require('mongodb').MongoClient;
+// giftlink-backend/models/db.js
+const { MongoClient } = require("mongodb");
+const pinoLogger = require("../logger"); // Assuming you have a logger setup
 
-// MongoDB connection URL with authentication options
-let url = `${process.env.MONGO_URL}`;
+// Define MongoDB connection string
+const url = process.env.MONGO_URL || "mongodb://localhost:27017"; // MongoDB connection string
+const dbName = "giftDB"; // The database you want to connect to
 
-let dbInstance = null;
-const dbName = "giftdb";
-
+// Task 1: Connect to MongoDB
 async function connectToDatabase() {
-    if (dbInstance){
-        return dbInstance
-    };
-
-    const client = new MongoClient(url);      
+  try {
+    const client = new MongoClient(url, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
 
     // Task 1: Connect to MongoDB
-    // {{insert code}}
+    await client.connect(); // Connecting to MongoDB
 
-    // Task 2: Connect to database giftDB and store in variable dbInstance
-    //{{insert code}}
+    // Task 2: Assign dbInstance
+    const dbInstance = client.db(dbName); // Assigning the database instance
 
-    // Task 3: Return database instance
-    // {{insert code}}
+    // Task 3: Return dbInstance
+    pinoLogger.info(
+      `Successfully connected to MongoDB, using database: ${dbName}`
+    );
+    return dbInstance; // Returning the database instance
+  } catch (err) {
+    pinoLogger.error(`Error connecting to MongoDB: ${err.message}`);
+    throw new Error("MongoDB connection failed");
+  }
 }
 
 module.exports = connectToDatabase;
