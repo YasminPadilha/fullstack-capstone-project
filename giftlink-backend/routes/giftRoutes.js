@@ -1,25 +1,36 @@
-const { ObjectId } = require("mongodb");
+const express = require("express");
+const router = express.Router(); // This is where you define the router
+const connectToDatabase = require("../models/db");
 
-router.get("/:id", async (req, res) => {
+// Get all gifts
+router.get("/", async (req, res, next) => {
   try {
-    // Task 1: Connect to MongoDB and store connection to db constant
     const db = await connectToDatabase();
-
-    // Task 2: Use the collection() method to retrieve the gift collection
     const collection = db.collection("gifts");
+    const gifts = await collection.find({}).toArray(); // Get all gifts
+    res.json(gifts);
+  } catch (error) {
+    next(error);
+  }
+});
 
-    const id = req.params.id;
-
-    // Task 3: Find a specific gift by ID using the collection.findOne method
-    const gift = await collection.findOne({ _id: new ObjectId(id) });
+// Get a single gift by ID
+router.get("/:id", async (req, res, next) => {
+  try {
+    const db = await connectToDatabase();
+    const collection = db.collection("gifts");
+    const gift = await collection.findOne({
+      _id: new require("mongodb").ObjectId(req.params.id),
+    });
 
     if (!gift) {
-      return res.status(404).send("Gift not found");
+      return res.status(404).json({ message: "Gift not found" });
     }
 
     res.json(gift);
-  } catch (e) {
-    console.error("Error fetching gift:", e);
-    res.status(500).send("Error fetching gift");
+  } catch (error) {
+    next(error);
   }
 });
+
+module.exports = router;

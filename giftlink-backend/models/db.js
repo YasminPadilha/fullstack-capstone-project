@@ -9,10 +9,7 @@ const dbName = "giftDB"; // The database you want to connect to
 // Task 1: Connect to MongoDB
 async function connectToDatabase() {
   try {
-    const client = new MongoClient(url, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    const client = new MongoClient(url); // No need for useNewUrlParser and useUnifiedTopology anymore
 
     // Task 1: Connect to MongoDB
     await client.connect(); // Connecting to MongoDB
