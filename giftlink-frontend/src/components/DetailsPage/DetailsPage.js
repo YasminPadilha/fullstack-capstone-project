@@ -1,128 +1,105 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import './DetailsPage.css';
+// src/components/DetailsPage/DetailsPage.js
 
-function DetailsPage() {
-    const navigate = useNavigate();
-    const { productId } = useParams();
-    const [gift, setGift] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
-	useEffect(() => {
-        const authenticationToken = sessionStorage.getItem('auth-token');
-        if (!authenticationToken) {
-			// Task 1: Check for authentication and redirect
-            {{insert code here}}
+const DetailsPage = () => {
+  const { productId } = useParams(); // Access the productId from the URL
+  const navigate = useNavigate();
+  const [gift, setGift] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Check for authentication
+  useEffect(() => {
+    if (!sessionStorage.getItem("authToken")) {
+      navigate("/app/login"); // Redirect to login page if not authenticated
+    }
+  }, [navigate]);
+
+  // Fetch gift details
+  useEffect(() => {
+    const fetchGiftDetails = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.REACT_APP_BACKEND_URL}/api/gifts/${productId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch gift details");
         }
+        const data = await response.json();
+        setGift(data);
+        setComments(data.comments || []); // Assuming the gift object has a 'comments' array
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
 
-        // get the gift to be rendered on the details page
-        const fetchGift = async () => {
-            try {
-				// Task 2: Fetch gift details
-                const response ={{insert code here}}
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data = await response.json();
-                setGift(data);
-            } catch (error) {
-                setError(error.message);
-            } finally {
-                setLoading(false);
-            }
-        };
+    fetchGiftDetails();
+    window.scrollTo(0, 0); // Scroll to top when component mounts
+  }, [productId]);
 
-        fetchGift();
+  // Handle the back button click
+  const handleBackClick = () => {
+    navigate(-1); // Go back to the previous page
+  };
 
-		// Task 3: Scroll to top on component mount
-		{{ insert code here }}
+  if (loading) return <div>Loading...</div>;
 
-    }, [productId]);
+  if (error) return <div>Error: {error}</div>;
 
+  return (
+    <div className="details-page">
+      {gift ? (
+        <>
+          <button onClick={handleBackClick}>Back</button>
+          <h1>{gift.name}</h1>
+          <img
+            src={gift.image || "/images/no-image.png"} // Default image if no image is available
+            alt={gift.name}
+            className="product-image-large"
+          />
+          <div className="gift-details">
+            <p>
+              <strong>Category:</strong> {gift.category}
+            </p>
+            <p>
+              <strong>Condition:</strong> {gift.condition}
+            </p>
+            <p>
+              <strong>Date Added:</strong>{" "}
+              {new Date(gift.date_added * 1000).toLocaleDateString()}
+            </p>{" "}
+            {/* Assuming Unix timestamp */}
+            <p>
+              <strong>Age:</strong> {gift.age_years} years
+            </p>
+            <p>
+              <strong>Description:</strong> {gift.description}
+            </p>
+          </div>
 
-    const handleBackClick = () => {
-		// Task 4: Handle back click
-		{{ insert code here }}
-	};
-
-	//The comments have been hardcoded for this project.
-    const comments = [
-        {
-            author: "John Doe",
-            comment: "I would like this!"
-        },
-        {
-            author: "Jane Smith",
-            comment: "Just DMed you."
-        },
-        {
-            author: "Alice Johnson",
-            comment: "I will take it if it's still available."
-        },
-        {
-            author: "Mike Brown",
-            comment: "This is a good one!"
-        },
-        {
-            author: "Sarah Wilson",
-            comment: "My family can use one. DM me if it is still available. Thank you!"
-        }
-    ];
-
-
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
-    if (!gift) return <div>Gift not found</div>;
-
-return (
-        <div className="container mt-5">
-            <button className="btn btn-secondary mb-3" onClick={handleBackClick}>Back</button>
-            <div className="card product-details-card">
-                <div className="card-header text-white">
-                    <h2 className="details-title">{gift.name}</h2>
-                </div>
-                <div className="card-body">
-                    <div className="image-placeholder-large">
-                        {gift.image ? (
-			// Task 5: Display gift image
-			/*insert code here*/
-                        ) : (
-                            <div className="no-image-available-large">No Image Available</div>
-                        )}
-                    </div>
-                    // Task 6: Display gift details
-                    	<p><strong>Category:</strong> 
-				{/* insert code here  */}
-			</p>
-                    	<p><strong>Condition:</strong> 
-				{/* insert code here  */}
-                    	</p>
-                    	<p><strong>Date Added:</strong> 
-				{/* insert code here  */}
-                        </p>
-                    	<p><strong>Age (Years):</strong> 
-				{/* insert code here  */}
-                    	</p>
-                    	<p><strong>Description:</strong> 
-				{/* insert code here  */}
-                    	</p>
-                </div>
-            </div>
-            <div className="comments-section mt-4">
-                <h3 className="mb-3">Comments</h3>
-				// Task 7: Render comments section by using the map function to go through all the comments
-				{{ insert code here }} => (
-                    <div key={index} className="card mb-3">
-                        <div className="card-body">
-                            <p className="comment-author"><strong>{comment.author}:</strong></p>
-                            <p className="comment-text">{comment.comment}</p>
-                        </div>
-                    </div>
+          <div className="comments-section">
+            <h3>Comments</h3>
+            {comments.length > 0 ? (
+              <ul>
+                {comments.map((comment, index) => (
+                  <li key={index}>{comment.text}</li>
                 ))}
-            </div>
-        </div>
-    );
-}
+              </ul>
+            ) : (
+              <p>No comments available for this gift.</p>
+            )}
+          </div>
+        </>
+      ) : (
+        <div>No gift found</div>
+      )}
+    </div>
+  );
+};
 
 export default DetailsPage;

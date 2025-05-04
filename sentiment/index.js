@@ -1,65 +1,57 @@
-require("dotenv").config();
-const express = require("express");
-const axios = require("axios");
-const logger = require("./logger");
-const expressPino = require("express-pino-logger")({ logger });
-// Task 1: import the natural library
+// Step 1: Import the Natural library
 const natural = require("natural");
+const express = require("express");
 
-// Task 2: initialize the express server
 const app = express();
-const port = process.env.PORT || 3000;
 
+// Middleware to parse JSON requests
 app.use(express.json());
-app.use(expressPino);
 
-// Task 3: Create a POST /sentiment endpoint
-app.post("/sentiment", async (req, res) => {
-  // Task 4: Extract the sentence parameter from the request body
-  const { sentence } = req.body;
-
-  // Check if the sentence exists in the request body
-  if (!sentence) {
-    logger.error("No sentence provided");
-    return res.status(400).json({ error: "No sentence provided" });
-  }
-
-  // Initialize the sentiment analyzer with the Natural's PorterStemmer and "English" language
-  const Analyzer = natural.SentimentAnalyzer;
-  const stemmer = natural.PorterStemmer;
-  const analyzer = new Analyzer("English", stemmer, "afinn");
-
-  // Perform sentiment analysis
+// Step 3: Create the /sentiment POST endpoint
+app.post("/sentiment", (req, res) => {
   try {
-    const analysisResult = analyzer.getSentiment(sentence.split(" "));
+    // Step 4: Extract the sentence parameter from the request body
+    const { sentence } = req.body;
 
-    let sentiment = "neutral";
-
-    // Task 5: Set sentiment to negative, positive, or neutral based on score
-    if (analysisResult < 0) {
-      sentiment = "negative";
-    } else if (analysisResult > 0.33) {
-      sentiment = "positive";
-    } else {
-      sentiment = "neutral";
+    if (!sentence || typeof sentence !== "string") {
+      return res.status(400).json({ error: "Invalid sentence input" });
     }
 
-    // Logging the result
-    logger.info(`Sentiment analysis result: ${analysisResult}`);
+    // Step 5: Process the sentiment using the Natural library
+    const sentimentAnalyzer = new natural.SentimentAnalyzer(
+      "English",
+      natural.PorterStemmer,
+      "afinn"
+    );
+    const sentimentScore = sentimentAnalyzer.getSentiment(sentence.split(" "));
 
-    // Task 6: Send a status code of 200 with both sentiment score and the sentiment text
-    res
-      .status(200)
-      .json({ sentimentScore: analysisResult, sentiment: sentiment });
+    let sentiment = "neutral"; // Default sentiment
+
+    // Determine sentiment based on the score
+    if (sentimentScore < 0) {
+      sentiment = "negative";
+    } else if (sentimentScore > 0.33) {
+      sentiment = "positive";
+    }
+
+    // Step 6: Implement success return state
+    return res.status(200).json({
+      sentimentScore: sentimentScore,
+      sentiment: sentiment,
+    });
   } catch (error) {
-    logger.error(`Error performing sentiment analysis: ${error}`);
-
-    // Task 7: Return an HTTP code of 500 and an error message if there is an error
-    res.status(500).json({ message: "Error performing sentiment analysis" });
+    // Step 7: Implement error return state
+    console.error("Error during sentiment analysis:", error);
+    return res
+      .status(500)
+      .json({ error: "An error occurred while analyzing sentiment" });
   }
 });
 
+// Set the server port
+const port = 3060;
+
 // Start the server
 app.listen(port, () => {
-  logger.info(`Server running on port ${port}`);
+  console.log(`Sentiment Analysis Server running on port ${port}`);
 });
