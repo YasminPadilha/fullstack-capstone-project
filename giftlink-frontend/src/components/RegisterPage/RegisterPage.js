@@ -10,11 +10,24 @@ function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showerr, setShowerr] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // Loading state
   const navigate = useNavigate();
   const { setIsLoggedIn } = useAppContext();
 
+  // Function to validate form inputs
+  const validateForm = () => {
+    if (!firstName || !lastName || !email || !password) {
+      setShowerr("All fields are required.");
+      return false;
+    }
+    return true;
+  };
+
   const handleRegister = async () => {
+    if (!validateForm()) return; // Only proceed if the form is valid
+
     try {
+      setIsLoading(true); // Start loading
       const response = await fetch(
         `${urlConfig.backendUrl}/api/auth/register`,
         {
@@ -23,26 +36,30 @@ function RegisterPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            firstName: firstName,
-            lastName: lastName,
-            email: email,
-            password: password,
+            firstName,
+            lastName,
+            email,
+            password,
           }),
         }
       );
+
       const json = await response.json();
+      setIsLoading(false); // Stop loading
 
       if (json.authtoken) {
+        // Successful registration
         sessionStorage.setItem("auth-token", json.authtoken);
         sessionStorage.setItem("name", firstName);
         sessionStorage.setItem("email", json.email);
         setIsLoggedIn(true);
         navigate("/app");
-      }
-      if (json.error) {
+      } else if (json.error) {
+        // Handle backend errors (e.g., email already taken)
         setShowerr(json.error);
       }
     } catch (e) {
+      setIsLoading(false); // Stop loading on error
       console.log("Error fetching details: " + e.message);
       setShowerr("An error occurred during registration.");
     }
@@ -56,26 +73,26 @@ function RegisterPage() {
             <h2 className="text-center mb-4 font-weight-bold">Register</h2>
             <div className="mb-3">
               <label htmlFor="firstName" className="form-label">
-                FirstName
+                First Name
               </label>
               <input
                 id="firstName"
                 type="text"
                 className="form-control"
-                placeholder="Enter your firstName"
+                placeholder="Enter your first name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
               />
             </div>
             <div className="mb-3">
               <label htmlFor="lastName" className="form-label">
-                LastName
+                Last Name
               </label>
               <input
                 id="lastName"
                 type="text"
                 className="form-control"
-                placeholder="Enter your lastName"
+                placeholder="Enter your last name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
               />
@@ -86,14 +103,12 @@ function RegisterPage() {
               </label>
               <input
                 id="email"
-                type="text"
+                type="email"
                 className="form-control"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-
-              <div className="text-danger">{showerr}</div>
             </div>
             <div className="mb-4">
               <label htmlFor="password" className="form-label">
@@ -108,11 +123,15 @@ function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+            {showerr && <div className="text-danger">{showerr}</div>}{" "}
+            {/* Display error */}
             <button
               className="btn btn-primary w-100 mb-3"
               onClick={handleRegister}
+              disabled={isLoading} // Disable button while loading
             >
-              Register
+              {isLoading ? "Registering..." : "Register"}{" "}
+              {/* Show loading text */}
             </button>
             <p className="mt-4 text-center">
               Already a member?{" "}
